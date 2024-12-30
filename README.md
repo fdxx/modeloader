@@ -55,7 +55,7 @@ git clone --depth=1 -b l4d2 https://github.com/alliedmodders/hl2sdk hl2sdk-l4d2
 git clone --depth=1 https://github.com/fdxx/modeloader
 
 cd modeloader
-xmake f --SMPATH=../sourcemod --MMPATH=../metamod --HL2SDKPATH=../hl2sdk-l4d2
+xmake f -c --SMPATH=../sourcemod --MMPATH=../metamod --HL2SDKPATH=../hl2sdk-l4d2
 xmake -rv modeloader
 ```
 
