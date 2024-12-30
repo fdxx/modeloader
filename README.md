@@ -49,7 +49,7 @@ export CC=clang && export CXX=clang++
 wget https://xmake.io/shget.text -O - | bash
 
 mkdir temp && cd temp
-git clone --depth=1 -b 1.11-dev --recurse-submodules https://github.com/alliedmodders/sourcemod sourcemod
+git clone --depth=1 -b 1.12-dev --recurse-submodules https://github.com/alliedmodders/sourcemod sourcemod
 git clone --depth=1 -b 1.11-dev https://github.com/alliedmodders/metamod-source metamod
 git clone --depth=1 -b l4d2 https://github.com/alliedmodders/hl2sdk hl2sdk-l4d2
 git clone --depth=1 https://github.com/fdxx/modeloader

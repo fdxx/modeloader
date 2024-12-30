@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        sm_version: ["1.11"]
+        sm_version: ["1.12"]
         os: [windows-2019, ubuntu-latest]
         include:
           - os: windows-2019
@@ -20,8 +20,8 @@ jobs:
             os_short: linux
             container_image: debian:10
 
-          - sm_version: "1.11"
-            sm_branch: "1.11-dev"
+          - sm_version: "1.12"
+            sm_branch: "1.12-dev"
             meta_version: "1.11"
             meta_branch: "1.11-dev"
 
