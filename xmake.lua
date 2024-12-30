@@ -170,7 +170,7 @@ target("modeloader")
 
 		add_linkdirs("$(HL2SDKPATH)/lib/linux");
 		add_links("$(HL2SDKPATH)/lib/linux/mathlib_i486.a", "vstdlib_srv", "tier0_srv")
-		add_shflags("-flto", "-static-libstdc++", "-static-libgcc")
+		add_shflags("-fuse-ld=lld", "-flto", "-static-libstdc++", "-static-libgcc")
 	end
 	
 	after_build(function (target)
