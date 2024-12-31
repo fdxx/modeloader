@@ -1,6 +1,7 @@
 #pragma once
 
-#include "smsdk_ext.h"
+#include <string>
+#include <smsdk_ext.h>
 
 class ModeLoader : public SDKExtension
 {
@@ -9,4 +10,14 @@ public:
 	bool SDK_OnLoad(char *error, size_t maxlen, bool late);
 	void SDK_OnAllLoaded();
 	void SDK_OnUnload();
+
+	bool GetLoadData(const char *modename);
+	static void LoadMode(void *data);
+	static bool ExecFile(const std::string &file);
+	static char *TrimWhitespace(char *str, size_t len);
+
+private:
+	std::string m_modename;
+	std::string m_pluginCfg;
+	std::string m_settingCfg;
 };
