@@ -40,7 +40,7 @@ void ModeLoader::SDK_OnAllLoaded()
 	if (!GetLoadData(name))
 		return;
 
-	LoadMode((void*)LOAD_PLUGINS);
+	ModeLoader::LoadMode((void*)LOAD_PLUGINS);
 }
 
 void ModeLoader::SDK_OnUnload()
@@ -93,13 +93,13 @@ void ModeLoader::LoadMode(void *data)
 		{
 			sv_modeloader_name.SetValue(g_ModeLoader.m_modename.c_str());
 			g_ModeCvar.OnModeChanged();
-			ExecFile(g_ModeLoader.m_pluginCfg);
-			smutils->AddFrameAction(LoadMode, (void*)LOAD_SETTINGS);
+			g_ModeLoader.ExecFile(g_ModeLoader.m_pluginCfg);
+			smutils->AddFrameAction(ModeLoader::LoadMode, (void*)LOAD_SETTINGS);
 			return;
 		}
 		case LOAD_SETTINGS:
 		{
-			ExecFile(g_ModeLoader.m_pluginCfg);
+			g_ModeLoader.ExecFile(g_ModeLoader.m_settingCfg);
 			break;
 		}
 	}
@@ -174,7 +174,7 @@ CON_COMMAND(sm_modeloader, "Load the specified mode.")
 	if (!g_ModeLoader.GetLoadData(args[1]))
 		return;
 
-	g_ModeLoader.LoadMode((void*)LOAD_PLUGINS);
+	ModeLoader::LoadMode((void*)LOAD_PLUGINS);
 }
 
 CON_COMMAND(sm_modeloader_reloadmap, "Reload the current map.")
@@ -183,7 +183,6 @@ CON_COMMAND(sm_modeloader_reloadmap, "Reload the current map.")
 	snprintf(buffer, sizeof(buffer), "changelevel \"%s\"\n", gamehelpers->GetCurrentMap());
 	engine->ServerCommand(buffer);
 }
-
 
 CON_COMMAND(sm_modeloader_execfile, "Parse the file and execute it line by line.")
 {
@@ -195,12 +194,3 @@ CON_COMMAND(sm_modeloader_execfile, "Parse the file and execute it line by line.
 
 	g_ModeLoader.ExecFile(args[1]);
 }
-
-
-
-
-
-
-
-
-

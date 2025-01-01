@@ -13,8 +13,8 @@ public:
 
 	bool GetLoadData(const char *modename);
 	static void LoadMode(void *data);
-	static bool ExecFile(const std::string &file);
-	static char *TrimWhitespace(char *str, size_t len);
+	bool ExecFile(const std::string &file);
+	char *TrimWhitespace(char *str, size_t len);
 
 private:
 	std::string m_modename;
