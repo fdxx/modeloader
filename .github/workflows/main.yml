@@ -45,8 +45,7 @@ jobs:
         run: |
           apt update && apt install -y apt-transport-https lsb-release wget curl software-properties-common gnupg g++-multilib git make
           bash <(curl -fsSL https://apt.llvm.org/llvm.sh) 18
-          ln -s /usr/bin/clang-18 /usr/bin/clang
-          ln -s /usr/bin/clang++-18 /usr/bin/clang++
+          echo "/usr/lib/llvm-18/bin" >> $GITHUB_PATH
           echo "CC=clang" >> $GITHUB_ENV
           echo "CXX=clang++" >> $GITHUB_ENV
           echo "XMAKE_ROOT=y" >> $GITHUB_ENV
@@ -86,7 +85,7 @@ jobs:
       - name: Compile ${{ github.event.repository.name }}
         working-directory: src
         run: |
-          xmake f --SMPATH=../sourcemod-${{ matrix.sm_version }} --MMPATH=../metamod-${{ matrix.meta_version }} --HL2SDKPATH=../hl2sdk-l4d2
+          xmake f -c --SMPATH=../sourcemod-${{ matrix.sm_version }} --MMPATH=../metamod-${{ matrix.meta_version }} --HL2SDKPATH=../hl2sdk-l4d2
           xmake -rv modeloader
 
       - name: Uploading package

@@ -42,11 +42,17 @@ See the `example` Folder for usage examples.
 ## Build manually
 ```bash
 ## Debian as an example.
-dpkg --add-architecture i386
-apt update && apt install -y clang g++-multilib wget git make
+apt update && apt install -y apt-transport-https lsb-release wget curl software-properties-common gnupg g++-multilib git make
+bash <(curl -fsSL https://apt.llvm.org/llvm.sh) 18
 
-export CC=clang && export CXX=clang++
+echo 'export PATH=/usr/lib/llvm-18/bin:$PATH' >> /etc/profile
+echo 'export CC=clang' >> /etc/profile
+echo 'export CXX=clang++' >> /etc/profile
+echo 'export XMAKE_ROOT=y' >> /etc/profile
+source /etc/profile
+
 wget https://xmake.io/shget.text -O - | bash
+source ~/.xmake/profile
 
 mkdir temp && cd temp
 git clone --depth=1 -b 1.12-dev --recurse-submodules https://github.com/alliedmodders/sourcemod sourcemod
