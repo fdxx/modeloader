@@ -138,7 +138,7 @@ target("modeloader")
 		add_shflags("/DEBUG") --Always generate pdb files
 		add_shflags("/OPT:ICF", "/OPT:REF")
 		add_linkdirs("$(HL2SDKPATH)/lib/public");
-		add_links("mathlib", "tier0", "vstdlib", "kernel32", "legacy_stdio_definitions")
+		add_links("tier0", "vstdlib", "kernel32", "legacy_stdio_definitions")
 		
 	else
 		set_toolchains("clang")
@@ -171,7 +171,7 @@ target("modeloader")
 		)
 
 		add_linkdirs("$(HL2SDKPATH)/lib/linux");
-		add_links("$(HL2SDKPATH)/lib/linux/mathlib_i486.a", "vstdlib_srv", "tier0_srv")
+		add_links("tier0_srv", "vstdlib_srv")
 		add_shflags("-fuse-ld=lld", "-flto", "-static-libstdc++", "-static-libgcc")
 	end
 	
