@@ -2,7 +2,7 @@
 A [sourcemod](https://github.com/alliedmodders/sourcemod) extension. Load the specified mode through the configuration file. 
 
 ## Requirements:
-- Sourcemod 1.12 or later
+- Sourcemod 1.11 or later
 
 ## Description
 - `-modename`: Command line option. If set, the extension will auto load the specified mode from **modeloader.cfg** (see below) at startup.

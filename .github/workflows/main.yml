@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        sm_version: ["1.12"]
+        sm_version: ["1.11", "1.12"]
         os: [windows-2019, ubuntu-latest]
         include:
           - os: windows-2019
@@ -23,6 +23,11 @@ jobs:
           - os: ubuntu-latest
             os_short: linux
             container_image: debian:10
+
+          - sm_version: "1.11"
+            sm_branch: "1.11-dev"
+            meta_version: "1.11"
+            meta_branch: "1.11-dev"
 
           - sm_version: "1.12"
             sm_branch: "1.12-dev"
@@ -91,6 +96,6 @@ jobs:
       - name: Uploading package
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ github.event.repository.name }}-${{ matrix.os_short }}-${{ env.GITHUB_SHA_SHORT }}
+          name: ${{ github.event.repository.name }}-${{ matrix.sm_version }}-${{ matrix.os_short }}-${{ env.GITHUB_SHA_SHORT }}
           path: src/release
  
