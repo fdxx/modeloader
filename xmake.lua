@@ -26,6 +26,8 @@ target("tier1")
 		"$(HL2SDKPATH)/public/mathlib"
 	)
 
+	add_defines("NDEBUG")
+
 	if is_plat("windows") then
 		set_toolchains("msvc")
 		add_defines(
