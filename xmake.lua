@@ -64,7 +64,7 @@ target("tier1")
 			"-fno-exceptions", 
 			"-fvisibility=hidden", 
 			"-fvisibility-inlines-hidden", 
-			"-flto", "-O2", "-g3"
+			"-flto", "-fPIC", "-O2", "-g3"
 		)
 	end
 
