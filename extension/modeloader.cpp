@@ -127,6 +127,14 @@ bool ModeLoader::ExecFile(const std::string &file)
 		if (*ptr == '\0')
 			continue;
 
+		if (!strncmp(ptr, "exec", 4))
+		{
+			ptr = TrimWhitespace(ptr+4, strlen(ptr+4));
+			std::string str = std::string("cfg/").append(ptr);
+			ExecFile(str);
+			continue;
+		}
+
 		size_t len = strlen(ptr);
 		ptr[len] = '\n';
 		ptr[len+1] = '\0';
@@ -138,8 +146,6 @@ bool ModeLoader::ExecFile(const std::string &file)
 	filesystem->Close(fp);
 	return true;
 }
-
-
 
 // https://github.com/alliedmodders/sourcemod/blob/master/core/logic/stringutil.cpp#L338
 char *ModeLoader::TrimWhitespace(char *str, size_t len)
