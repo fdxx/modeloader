@@ -15,9 +15,11 @@ public:
 	static void LoadMode(void *data);
 	bool ExecFile(const std::string &file);
 	char *TrimWhitespace(char *str, size_t len);
+	char *TrimQuotes(char *str, size_t len);
+	std::vector<std::string> SplitString(std::string str, std::string_view delimiter);
 
 private:
 	std::string m_modename;
-	std::string m_pluginCfg;
-	std::string m_settingCfg;
+	std::vector<std::string> m_pluginCfg;
+	std::vector<std::string> m_settingCfg;
 };

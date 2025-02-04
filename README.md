@@ -26,10 +26,11 @@ Path: `cfg/modeloader/modeloader.cfg`
         "modename"      "MyModeName"
 
         // Path to the plugin list file to load.
-        "plugins_cfg"   "path/to/plugins.cfg"
+        // Multiple files are separated using `;`
+        "plugins_cfg"   "path/plugins1.cfg;path/plugins2.cfg"
 
         // Path to the setting file to load, such as cvar, cmd, etc.
-        "settings_cfg"  "path/to/settings.cfg"
+        "settings_cfg"  "path/settings1.cfg;path/settings2.cfg"
     }
 
     // Adding other modes.

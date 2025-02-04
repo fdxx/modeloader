@@ -49,6 +49,8 @@ void ModeLoader::SDK_OnUnload()
 	ConVar_Unregister();
 }
 
+
+
 bool ModeLoader::GetLoadData(const char *name)
 {
 	m_pluginCfg = {};
@@ -67,8 +69,8 @@ bool ModeLoader::GetLoadData(const char *name)
 		if (strcmp(kv->GetString("modename"), name))
 			continue;
 		
-		m_pluginCfg = kv->GetString("plugins_cfg");
-		m_settingCfg = kv->GetString("settings_cfg");
+		m_pluginCfg = SplitString(kv->GetString("plugins_cfg"), ";");
+		m_settingCfg = SplitString(kv->GetString("settings_cfg"), ";");
 		break;
 	}
 
@@ -76,7 +78,7 @@ bool ModeLoader::GetLoadData(const char *name)
 
 	if (m_pluginCfg.empty() || m_settingCfg.empty())
 	{
-		smutils->LogError(myself, "Failed to GetLoadData: \nmodename: %s, \nplugins_cfg: %s, \nsettings_cfg: %s", name, m_pluginCfg.c_str(), m_settingCfg.c_str());
+		smutils->LogError(myself, "Failed to GetLoadData: modename: %s", name);
 		return false;
 	}
 
@@ -93,13 +95,18 @@ void ModeLoader::LoadMode(void *data)
 		{
 			sv_modeloader_name.SetValue(g_ModeLoader.m_modename.c_str());
 			g_ModeCvar.OnModeChanged();
-			g_ModeLoader.ExecFile(g_ModeLoader.m_pluginCfg);
+
+			for (const std::string &file : g_ModeLoader.m_pluginCfg)
+				g_ModeLoader.ExecFile(file);
+
 			smutils->AddFrameAction(ModeLoader::LoadMode, (void*)LOAD_SETTINGS);
 			return;
 		}
 		case LOAD_SETTINGS:
 		{
-			g_ModeLoader.ExecFile(g_ModeLoader.m_settingCfg);
+			for (const std::string &file : g_ModeLoader.m_settingCfg)
+				g_ModeLoader.ExecFile(file);
+			
 			break;
 		}
 	}
@@ -130,6 +137,7 @@ bool ModeLoader::ExecFile(const std::string &file)
 		if (!strncmp(ptr, "exec", 4))
 		{
 			ptr = TrimWhitespace(ptr+4, strlen(ptr+4));
+			ptr = TrimQuotes(ptr, strlen(ptr));
 			std::string str = std::string("cfg/").append(ptr);
 			ExecFile(str);
 			continue;
@@ -167,6 +175,47 @@ char *ModeLoader::TrimWhitespace(char *str, size_t len)
 	while (*str != '\0' && textparsers->IsWhitespace(str))
 		str++;
 	return str;
+}
+
+char *ModeLoader::TrimQuotes(char *str, size_t len)
+{
+	if (!len)
+		return str;
+
+	if (*str == '\"')
+	{
+		str++;
+		len--;
+	}
+	
+	if (len > 0 && str[len-1] == '\"')
+		str[len-1] = '\0';
+
+	return str;
+}
+
+std::vector<std::string> ModeLoader::SplitString(std::string str, std::string_view delimiter)
+{
+    std::vector<std::string> result;
+
+    if (delimiter.empty())
+	{
+        result.push_back(str);
+        return result;
+    }
+
+    size_t start = 0;
+    size_t end = str.find(delimiter, start);
+
+    while (end != std::string::npos)
+	{
+        result.push_back(str.substr(start, end - start));
+        start = end + delimiter.length();
+        end = str.find(delimiter, start);
+    }
+
+    result.push_back(str.substr(start));
+    return result;
 }
 
 CON_COMMAND(sm_modeloader, "Load the specified mode.")
