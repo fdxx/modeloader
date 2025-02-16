@@ -40,7 +40,7 @@
 /* Basic information exposed publicly */
 #define SMEXT_CONF_NAME			"modeloader"
 #define SMEXT_CONF_DESCRIPTION	"modeloader"
-#define SMEXT_CONF_VERSION		"0.1"
+#define SMEXT_CONF_VERSION		"0.2"
 #define SMEXT_CONF_AUTHOR		"fdxx"
 #define SMEXT_CONF_URL			"https://github.com/fdxx/modeloader"
 #define SMEXT_CONF_LOGTAG		"modeloader"

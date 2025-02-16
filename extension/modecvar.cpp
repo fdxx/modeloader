@@ -1,25 +1,28 @@
+#include <smsdk_ext.h>
+#include <tier1/convar.h>
 #include "modecvar.h"
-#include "smsdk_ext.h"
-#include "convar.h"
-#include <cstdio>
+
+ModeCvar g_ModeCvar;
+static void OnGlobalCvarChanged(IConVar *pCvar, const char *pOldValue, float flOldValue);
 
 struct CvarInfo
 {
 	ConVar *m_pCvar;
-	char *m_sLockValue;
+	std::string m_sLockValue;
 
 	CvarInfo(ConVar *pCvar, const char *lockvalue)
 	{
 		m_pCvar = pCvar;
-		m_sLockValue = strdup(lockvalue);
-	}
-
-	~CvarInfo()
-	{
-		free(m_sLockValue);
+		m_sLockValue = lockvalue;
 	}
 };
 
+ModeCvar::ModeCvar()
+{
+	m_bCvarChangedHook = false;
+	m_bLockValue = true;
+	m_Cvars = {};
+}
 
 ModeCvar::~ModeCvar()
 {
@@ -74,11 +77,6 @@ std::string ModeCvar::StrToLower(const char *name)
 		result[i] = std::tolower(result[i]);
 	return result; // std::move(result);
 }
-
-
-
-ModeCvar g_ModeCvar;
-static void OnGlobalCvarChanged(IConVar *pCvar, const char *pOldValue, float flOldValue);
 
 
 void ModeCvar::OnModeChanged()
@@ -148,8 +146,8 @@ CON_COMMAND(sm_modecvar_del, "delete modecvar.")
 
 static void OnGlobalCvarChanged(IConVar *pCvar, const char *pOldValue, float flOldValue)
 {
-	ConVarRef cvarRef(pCvar);
-	if (!strcmp(cvarRef.GetString(), pOldValue))
+	ConVarRef convar(pCvar);
+	if (!strcmp(convar.GetString(), pOldValue))
 		return;
 
 	CvarInfo *pInfo = nullptr;
@@ -157,8 +155,8 @@ static void OnGlobalCvarChanged(IConVar *pCvar, const char *pOldValue, float flO
 	if (!g_ModeCvar.Retrieve(cvarName, &pInfo))
 		return;
 
-	smutils->LogMessage(myself, "ModeCvarRevert: %s: %s -> %s", cvarName, pOldValue, cvarRef.GetString());
+	smutils->LogMessage(myself, "ModeCvarRevert: %s: %s -> %s", cvarName, pOldValue, convar.GetString());
 
 	if (g_ModeCvar.m_bLockValue)
-		cvarRef.SetValue(pInfo->m_sLockValue);
+		convar.SetValue(pInfo->m_sLockValue.c_str());
 }

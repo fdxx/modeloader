@@ -2,18 +2,22 @@ name: build
 
 on:
   workflow_dispatch:
+  pull_request:
   push:
-    paths: pushbuild.txt
+    branches:
+      - main
+    paths:
+      - pushbuild.txt
 
 jobs:
   build:
     strategy:
       fail-fast: false
       matrix:
-        sm_version: ["1.11"]
-        os: [windows-2022, ubuntu-latest]
+        sm_version: ["1.11", "1.12", "latest"]
+        os: [windows-2019, ubuntu-latest]
         include:
-          - os: windows-2022
+          - os: windows-2019
             os_short: windows
 
           - os: ubuntu-latest
@@ -22,6 +26,16 @@ jobs:
 
           - sm_version: "1.11"
             sm_branch: "1.11-dev"
+            meta_version: "1.11"
+            meta_branch: "1.11-dev"
+
+          - sm_version: "1.12"
+            sm_branch: "1.12-dev"
+            meta_version: "1.11"
+            meta_branch: "1.11-dev"
+          
+          - sm_version: "latest"
+            sm_branch: "master"
             meta_version: "1.11"
             meta_branch: "1.11-dev"
 
@@ -41,8 +55,7 @@ jobs:
         run: |
           apt update && apt install -y apt-transport-https lsb-release wget curl software-properties-common gnupg g++-multilib git make
           bash <(curl -fsSL https://apt.llvm.org/llvm.sh) 18
-          ln -s /usr/bin/clang-18 /usr/bin/clang
-          ln -s /usr/bin/clang++-18 /usr/bin/clang++
+          echo "/usr/lib/llvm-18/bin" >> $GITHUB_PATH
           echo "CC=clang" >> $GITHUB_ENV
           echo "CXX=clang++" >> $GITHUB_ENV
           echo "XMAKE_ROOT=y" >> $GITHUB_ENV
@@ -82,12 +95,12 @@ jobs:
       - name: Compile ${{ github.event.repository.name }}
         working-directory: src
         run: |
-          xmake f --SMPATH=../sourcemod-${{ matrix.sm_version }} --MMPATH=../metamod-${{ matrix.meta_version }} --HL2SDKPATH=../hl2sdk-l4d2
+          xmake f -c --SMPATH=../sourcemod-${{ matrix.sm_version }} --MMPATH=../metamod-${{ matrix.meta_version }} --HL2SDKPATH=../hl2sdk-l4d2
           xmake -rv modeloader
 
       - name: Uploading package
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ github.event.repository.name }}-${{ matrix.os_short }}-${{ env.GITHUB_SHA_SHORT }}
+          name: ${{ github.event.repository.name }}-sm${{ matrix.sm_version }}-${{ matrix.os_short }}-${{ env.GITHUB_SHA_SHORT }}
           path: src/release
  

@@ -26,10 +26,11 @@ Path: `cfg/modeloader/modeloader.cfg`
         "modename"      "MyModeName"
 
         // Path to the plugin list file to load.
-        "plugins_cfg"   "path/to/plugins.cfg"
+        // Multiple files are separated using `;`
+        "plugins_cfg"   "path/plugins1.cfg;path/plugins2.cfg"
 
         // Path to the setting file to load, such as cvar, cmd, etc.
-        "settings_cfg"  "path/to/settings.cfg"
+        "settings_cfg"  "path/settings1.cfg;path/settings2.cfg"
     }
 
     // Adding other modes.
@@ -42,20 +43,26 @@ See the `example` Folder for usage examples.
 ## Build manually
 ```bash
 ## Debian as an example.
-dpkg --add-architecture i386
-apt update && apt install -y clang g++-multilib wget git make
+apt update && apt install -y apt-transport-https lsb-release wget curl software-properties-common gnupg g++-multilib git make
+bash <(curl -fsSL https://apt.llvm.org/llvm.sh) 18
 
-export CC=clang && export CXX=clang++
+echo 'export PATH=/usr/lib/llvm-18/bin:$PATH' >> /etc/profile
+echo 'export CC=clang' >> /etc/profile
+echo 'export CXX=clang++' >> /etc/profile
+echo 'export XMAKE_ROOT=y' >> /etc/profile
+source /etc/profile
+
 wget https://xmake.io/shget.text -O - | bash
+source ~/.xmake/profile
 
 mkdir temp && cd temp
-git clone --depth=1 -b 1.11-dev --recurse-submodules https://github.com/alliedmodders/sourcemod sourcemod
+git clone --depth=1 -b 1.12-dev --recurse-submodules https://github.com/alliedmodders/sourcemod sourcemod
 git clone --depth=1 -b 1.11-dev https://github.com/alliedmodders/metamod-source metamod
 git clone --depth=1 -b l4d2 https://github.com/alliedmodders/hl2sdk hl2sdk-l4d2
 git clone --depth=1 https://github.com/fdxx/modeloader
 
 cd modeloader
-xmake f --SMPATH=../sourcemod --MMPATH=../metamod --HL2SDKPATH=../hl2sdk-l4d2
+xmake f -c --SMPATH=../sourcemod --MMPATH=../metamod --HL2SDKPATH=../hl2sdk-l4d2
 xmake -rv modeloader
 ```
 

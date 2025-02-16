@@ -1,11 +1,7 @@
-#include <cstdlib>
-#include <stdio.h>
-#include <string.h>
+#include <filesystem.h>
+#include <tier1/KeyValues.h>
 #include "modeloader.h"
 #include "modecvar.h"
-#include "convar.h"
-#include "filesystem.h"
-#include "KeyValues.h"
 
 #define CFGPATH	"cfg/modeloader/modeloader.cfg"
 #define COMMAND_MAX_LENGTH 512
@@ -13,53 +9,11 @@
 #define LOAD_PLUGINS 1
 #define LOAD_SETTINGS 2
 
-struct LoadData_t
-{
-	int m_type;
-	char *m_modename;
-	char *m_pluginCfg;
-	char *m_settingCfg;
-
-	LoadData_t(const char *modename)
-	{
-		m_type = LOAD_PLUGINS;
-		m_modename = strdup(modename);
-		m_pluginCfg = nullptr;
-		m_settingCfg = nullptr;
-	}
-
-	~LoadData_t()
-	{
-		if (m_modename)
-			free(m_modename);
-
-		if (m_pluginCfg)
-			free(m_pluginCfg);
-
-		if (m_settingCfg)
-			free(m_settingCfg);
-	}
-
-	void SetCfgPath(const char *plugins, const char *setting)
-	{
-		m_pluginCfg = plugins ? strdup(plugins) : nullptr;
-		m_settingCfg = setting ? strdup(setting) : nullptr;
-	}
-};
-
-static bool GetLoadData(LoadData_t *data);
-static void LoadMode(void *obj);
-static bool ExecFile(const char* file);
-static char *UTIL_TrimWhitespace(char *str, size_t len);
-
-
 ModeLoader g_ModeLoader;
 SMEXT_LINK(&g_ModeLoader);
 
 static IFileSystem *filesystem;
 static ConVar sv_modeloader_name("sv_modeloader_name", "", FCVAR_NOTIFY, "Track or get Current mode name.");
-
-
 
 bool ModeLoader::SDK_OnMetamodLoad(ISmmAPI *ismm, char *error, size_t maxlen, bool late)
 {
@@ -79,18 +33,14 @@ bool ModeLoader::SDK_OnLoad( char *error, size_t maxlength, bool late )
 void ModeLoader::SDK_OnAllLoaded()
 {
 	ICommandLine *pCmdLine = gamehelpers->GetValveCommandLine();
-	const char *value = nullptr;
-	if (!pCmdLine->CheckParm("-modename", &value))
+	const char *name = nullptr;
+	if (!pCmdLine->CheckParm("-modename", &name))
 		return;
 
-	LoadData_t *data = new LoadData_t(value);
-	if (!GetLoadData(data))
-	{
-		delete data;
+	if (!GetLoadData(name))
 		return;
-	}
 
-	LoadMode(data);
+	ModeLoader::LoadMode((void*)LOAD_PLUGINS);
 }
 
 void ModeLoader::SDK_OnUnload()
@@ -101,46 +51,11 @@ void ModeLoader::SDK_OnUnload()
 
 
 
-CON_COMMAND(sm_modeloader, "Load the specified mode.")
+bool ModeLoader::GetLoadData(const char *name)
 {
-	if (args.ArgC() != 2)
-	{
-		rootconsole->ConsolePrint("Usage: %s <modename>", args[0]);
-		return;
-	}
+	m_pluginCfg = {};
+	m_settingCfg = {};
 
-	LoadData_t *data = new LoadData_t(args[1]);
-	if (!GetLoadData(data))
-	{
-		delete data;
-		return;
-	}
-
-	LoadMode(data);
-}
-
-CON_COMMAND(sm_modeloader_reloadmap, "Reload the current map.")
-{
-	char buffer[256];
-	snprintf(buffer, sizeof(buffer), "changelevel \"%s\"\n", gamehelpers->GetCurrentMap());
-	engine->ServerCommand(buffer);
-}
-
-
-CON_COMMAND(sm_modeloader_execfile, "Parse the file and execute it line by line.")
-{
-	if (args.ArgC() != 2)
-	{
-		rootconsole->ConsolePrint("Usage: %s <file>", args[0]);
-		return;
-	}
-
-	ExecFile(args[1]);
-}
-
-
-static bool GetLoadData(LoadData_t *data)
-{
 	KeyValues *kvRoot = new KeyValues("");
 	if (!kvRoot->LoadFromFile(filesystem, CFGPATH, nullptr))
 	{
@@ -151,63 +66,62 @@ static bool GetLoadData(LoadData_t *data)
 
 	for (KeyValues *kv = kvRoot->GetFirstTrueSubKey(); kv; kv = kv->GetNextTrueSubKey())
 	{
-		if (strcmp(kv->GetString("modename"), data->m_modename))
+		if (strcmp(kv->GetString("modename"), name))
 			continue;
 		
-		const char *plugins = kv->GetString("plugins_cfg", nullptr);
-		const char *settings = kv->GetString("settings_cfg", nullptr);
-		data->SetCfgPath(plugins, settings);
+		m_pluginCfg = SplitString(kv->GetString("plugins_cfg"), ";");
+		m_settingCfg = SplitString(kv->GetString("settings_cfg"), ";");
 		break;
 	}
 
 	kvRoot->deleteThis();
 
-	if (!data->m_modename || !data->m_pluginCfg || !data->m_settingCfg)
+	if (m_pluginCfg.empty() || m_settingCfg.empty())
 	{
-		smutils->LogError(myself, "Failed to GetLoadData: \nmodename: %s, \nplugins_cfg: %s, \nsettings_cfg: %s", data->m_modename, data->m_pluginCfg, data->m_settingCfg);
+		smutils->LogError(myself, "Failed to GetLoadData: modename: %s", name);
 		return false;
 	}
 
+	m_modename = name;
 	return true;
 }
 
-static void LoadMode(void *obj)
+void ModeLoader::LoadMode(void *data)
 {
-	LoadData_t *data = (LoadData_t*)obj;
-
-	switch (data->m_type)
+	int type = int(data);
+	switch (type)
 	{
 		case LOAD_PLUGINS:
 		{
-			sv_modeloader_name.SetValue(data->m_modename);
+			sv_modeloader_name.SetValue(g_ModeLoader.m_modename.c_str());
 			g_ModeCvar.OnModeChanged();
 
-			ExecFile(data->m_pluginCfg);
+			for (const std::string &file : g_ModeLoader.m_pluginCfg)
+				g_ModeLoader.ExecFile(file);
 
-			data->m_type = LOAD_SETTINGS;
-			smutils->AddFrameAction(LoadMode, data);
+			smutils->AddFrameAction(ModeLoader::LoadMode, (void*)LOAD_SETTINGS);
 			return;
 		}
 		case LOAD_SETTINGS:
 		{
-			ExecFile(data->m_settingCfg);
+			for (const std::string &file : g_ModeLoader.m_settingCfg)
+				g_ModeLoader.ExecFile(file);
+			
 			break;
 		}
 	}
-
-	delete data;
 }
 
-static bool ExecFile(const char* file)
+bool ModeLoader::ExecFile(const std::string &file)
 {
-	FileHandle_t fp = filesystem->Open(file, "r", nullptr);
+	FileHandle_t fp = filesystem->Open(file.c_str(), "r", nullptr);
 	if (!fp)
 	{
-		smutils->LogError(myself, "Failed to Open: %s", file);
+		smutils->LogError(myself, "Failed to Open: %s", file.c_str());
 		return false;
 	}
 
-	smutils->LogMessage(myself, "ExecFile %s", file);
+	smutils->LogMessage(myself, "ExecFile %s", file.c_str());
 
 	char buffer[COMMAND_MAX_LENGTH];
 	while (!filesystem->EndOfFile(fp) && filesystem->ReadLine(buffer, sizeof(buffer)-2, fp))
@@ -216,9 +130,18 @@ static bool ExecFile(const char* file)
 		char *ptr = strstr(buffer, "//");
 		if (ptr) *ptr = '\0';
 
-		ptr = UTIL_TrimWhitespace(buffer, strlen(buffer));
+		ptr = TrimWhitespace(buffer, strlen(buffer));
 		if (*ptr == '\0')
 			continue;
+
+		if (!strncmp(ptr, "exec", 4))
+		{
+			ptr = TrimWhitespace(ptr+4, strlen(ptr+4));
+			ptr = TrimQuotes(ptr, strlen(ptr));
+			std::string str = std::string("cfg/").append(ptr);
+			ExecFile(str);
+			continue;
+		}
 
 		size_t len = strlen(ptr);
 		ptr[len] = '\n';
@@ -233,7 +156,7 @@ static bool ExecFile(const char* file)
 }
 
 // https://github.com/alliedmodders/sourcemod/blob/master/core/logic/stringutil.cpp#L338
-static char *UTIL_TrimWhitespace(char *str, size_t len)
+char *ModeLoader::TrimWhitespace(char *str, size_t len)
 {
 	char *end = str + len - 1;
 
@@ -254,4 +177,75 @@ static char *UTIL_TrimWhitespace(char *str, size_t len)
 	return str;
 }
 
+char *ModeLoader::TrimQuotes(char *str, size_t len)
+{
+	if (!len)
+		return str;
 
+	if (*str == '\"')
+	{
+		str++;
+		len--;
+	}
+	
+	if (len > 0 && str[len-1] == '\"')
+		str[len-1] = '\0';
+
+	return str;
+}
+
+std::vector<std::string> ModeLoader::SplitString(std::string str, std::string_view delimiter)
+{
+    std::vector<std::string> result;
+
+    if (delimiter.empty())
+	{
+        result.push_back(str);
+        return result;
+    }
+
+    size_t start = 0;
+    size_t end = str.find(delimiter, start);
+
+    while (end != std::string::npos)
+	{
+        result.push_back(str.substr(start, end - start));
+        start = end + delimiter.length();
+        end = str.find(delimiter, start);
+    }
+
+    result.push_back(str.substr(start));
+    return result;
+}
+
+CON_COMMAND(sm_modeloader, "Load the specified mode.")
+{
+	if (args.ArgC() != 2)
+	{
+		rootconsole->ConsolePrint("Usage: %s <modename>", args[0]);
+		return;
+	}
+
+	if (!g_ModeLoader.GetLoadData(args[1]))
+		return;
+
+	ModeLoader::LoadMode((void*)LOAD_PLUGINS);
+}
+
+CON_COMMAND(sm_modeloader_reloadmap, "Reload the current map.")
+{
+	char buffer[256];
+	snprintf(buffer, sizeof(buffer), "changelevel \"%s\"\n", gamehelpers->GetCurrentMap());
+	engine->ServerCommand(buffer);
+}
+
+CON_COMMAND(sm_modeloader_execfile, "Parse the file and execute it line by line.")
+{
+	if (args.ArgC() != 2)
+	{
+		rootconsole->ConsolePrint("Usage: %s <file>", args[0]);
+		return;
+	}
+
+	g_ModeLoader.ExecFile(args[1]);
+}
