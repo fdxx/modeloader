@@ -40,6 +40,14 @@ Path: `cfg/modeloader/modeloader.cfg`
 
 See the `example` Folder for usage examples.
 
+## Notes
+
+By default, sourcemod will automatically load all plugins under `plugins` folders, except for `disabled` and `optional` folders.
+
+So you need to put the plugin under `plugins/optional`, and use this extension to control which plugins are loaded, thus preventing sourcemod from loading automatically. 
+
+Or you can also use `sm plugins load_unlock` and `sm plugins load_lock`.
+
 ## Build manually
 ```bash
 ## Debian as an example.
